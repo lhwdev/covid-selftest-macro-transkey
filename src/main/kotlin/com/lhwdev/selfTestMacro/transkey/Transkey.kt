@@ -6,12 +6,16 @@ import kotlinx.coroutines.withContext
 import java.net.URL
 import kotlin.random.Random
 
+val stateless = false
+
+@Suppress("MayBeConstant")
+val useAsyncTranskey = true
 
 private val sGetTokenRegex = Regex("var TK_requestToken=(.*);")
 
-private val sDecInitTimeRegex = Regex("var decInitTime='(.*)';")
-private val sInitTimeRegex = Regex("var initTime='(.*)';")
-private val sUseSessionRegex = Regex("var useSession=(.*);")
+private val sDecInitTimeRegex = Regex("var decInitTime='([0-9]*)';")
+private val sInitTimeRegex = Regex("var initTime='([0-9a-fA-F]*)';")
+private val sUseSessionRegex = Regex("var useSession=(true|false);")
 
 private val sKeyInfoPointRegex = Regex("key\\.addPoint\\((\\d+), (\\d+)\\);")
 
@@ -22,25 +26,29 @@ suspend fun Transkey(
 	random: Random = Random
 ): Transkey = withContext(Dispatchers.IO) {
 	val token = sGetTokenRegex.find(
-		session.fetch(servletUrl["op" to "getToken"]).value
+		session.fetch(servletUrl["op" to "getToken"]).getText()
 	)!!.groupValues[1]
 	
-	val getInitTimeResult = session.fetch(servletUrl["op" to "getInitTime"]).value
+	println("token = $token;")
 	
-	val decInitTime = sDecInitTimeRegex.find(getInitTimeResult)!!.groupValues[1]
+	val getInitTimeResult = session.fetch(servletUrl["op" to "getInitTime"]).getText()
+	
+	val decInitTime = sDecInitTimeRegex.find(getInitTimeResult)?.groupValues?.get(1)
 	val initTime = sInitTimeRegex.find(getInitTimeResult)!!.groupValues[1]
 	val useSession = sUseSessionRegex.find(getInitTimeResult)!!.groupValues[1] == "true"
 	
-	val publicKey = session.fetch(
+	println("decInitTime = $decInitTime; initTime = $initTime; useSession = $useSession;")
+	
+	val certification = session.fetch(
 		servletUrl,
 		method = HttpMethod.post,
 		body = HttpBodies.form {
 			"op" set "getPublicKey"
 			"TK_requestToken" set token
 		}
-	).value
+	).getText()
 	
-	val crypto = Crypto(random, publicKey)
+	val crypto = Crypto(random, certification)
 	
 	val keyInfo = session.fetch(
 		servletUrl,
@@ -53,7 +61,7 @@ suspend fun Transkey(
 			"TK_requestToken" set token
 			"mode" set "common"
 		}
-	).value
+	).getText()
 	
 	val (_, num) = keyInfo.split("var number = new Array();")
 	val numberKeys = num.split("number.push(key);").dropLast(1).map { p ->
@@ -61,6 +69,7 @@ suspend fun Transkey(
 		groups[1] to groups[2]
 	}
 	
+	println("numberKeys = $numberKeys")
 	
 	Transkey(
 		session = session,
@@ -85,17 +94,14 @@ class Transkey(
 	val session: Session,
 	val servletUrl: URL,
 	val token: String,
-	val decInitTime: String,
+	val decInitTime: String?,
 	val initTime: String,
 	val useSession: Boolean,
 	val crypto: Crypto,
 	val numberKeys: List<Pair<String, String>>,
 	val random: Random
 ) {
-	private val allocIndex = random.nextInt().toString()
-	private val keyIndex = random.nextInt(from = 0, until = 68).toString()
-	
-	val encryptedKeyIndex = crypto.encryptRsa(keyIndex.toByteArray(Charsets.US_ASCII))
+	private val allocIndex = random.nextLong(until = 0xffffffff).toString()
 	
 	suspend fun newKeypad(
 		keyType: String = "number",
@@ -105,26 +111,45 @@ class Transkey(
 	): KeyPad {
 		require(keyType == "number") { "currently only supports keyType=\"number\"; provided $keyType" }
 		
+		fun FormScope.commonData() {
+			"name" set name
+			"keyType" set "single"
+			"keyboardType" set "${sKeyboardTypes[keyType]}"
+			"fieldType" set fieldType
+			"inputName" set inputName
+			"transkeyUuid" set crypto.uuid
+			"exE2E" set "false"
+			"isCrt" set "false"
+			"allocationIndex" set allocIndex
+			"initTime" set initTime
+			"TK_requestToken" set token
+			"parentKeyboard" set "false"
+			"talkBack" set "true"
+		}
+		
+		val keyIndex = if(useAsyncTranskey) {
+			session.fetch(
+				servletUrl,
+				method = HttpMethod.post,
+				body = HttpBodies.form {
+					commonData()
+					"op" set "getKeyIndex"
+				}
+			).getText()
+		} else {
+			val keyIndex = random.nextInt(from = 10, until = 58).toString()
+			crypto.encryptRsa(keyIndex.toByteArray(Charsets.US_ASCII))
+		}
+		
 		val skipData = session.fetch(
 			servletUrl,
 			method = HttpMethod.post,
 			body = HttpBodies.form {
+				commonData()
 				"op" set "getDummy"
-				"name" set name
-				"keyType" set "single"
-				"keyboardType" set "${sKeyboardTypes[keyType]}"
-				"fieldType" set fieldType
-				"inputName" set inputName
-				"transkeyUuid" set crypto.uuid
-				"exE2E" set "false"
-				"isCrt" set "false"
-				"allocationIndex" set allocIndex
-				"keyIndex" set encryptedKeyIndex
-				"initTime" set initTime
-				"TK_requestToken" set token
-				"talkBack" set "true"
+				"keyIndex" set keyIndex
 			}
-		).value
+		).getText()
 		
 		val skip = skipData.split(',').map { it.single() }
 		
@@ -134,8 +159,10 @@ class Transkey(
 			skipData = skip,
 			keys = numberKeys,
 			random = random,
+			initTime = initTime,
 			decInitTime = decInitTime,
-			useSession = useSession
+			useSession = useSession,
+			keyIndex = keyIndex
 		)
 	}
 	

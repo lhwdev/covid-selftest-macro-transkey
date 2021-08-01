@@ -1,5 +1,6 @@
 package com.lhwdev.selfTestMacro.transkey
 
+import com.lhwdev.selfTestMacro.decodeBase64
 import kotlin.random.Random
 
 
@@ -8,26 +9,6 @@ private val iv = byteArrayOf(
 	0x61, 0x6e, 0x73, 0x4b, 0x65, 0x79, 0x31, 0x30
 )
 
-private fun ByteArray.toHexString(separator: Char): String = buildString {
-	for(index in this@toHexString.indices) {
-		val byte = this@toHexString[index]
-		if(index != 0) append(separator)
-		append((byte.toInt() shr 4 and 0b1111).toString(radix = 16))
-		append((byte.toInt() and 0b1111).toString(radix = 16))
-	}
-}
-
-fun ByteArray.toHexString(): String = buildString {
-	for(index in this@toHexString.indices) {
-		val byte = this@toHexString[index]
-		append((byte.toInt() shr 4 and 0b1111).toString(radix = 16))
-		append((byte.toInt() and 0b1111).toString(radix = 16))
-	}
-}
-
-@Suppress("NOTHING_TO_INLINE")
-private inline fun Char.asciiByte(): Byte = code.toByte()
-
 
 class KeyPad(
 	val crypto: Crypto,
@@ -35,8 +16,10 @@ class KeyPad(
 	val skipData: List<Char>,
 	val keys: List<Pair<String, String>>,
 	val random: Random,
-	val decInitTime: String,
-	val useSession: Boolean
+	val initTime: String,
+	val decInitTime: String?,
+	val useSession: Boolean,
+	val keyIndex: String
 ) {
 	init {
 		require(keyType == "number") { "only number" }
@@ -47,8 +30,18 @@ class KeyPad(
 		message.map { keys[skipData.indexOf(it)] }
 	
 	fun encryptGeos(geos: List<Pair<String, String>>): String = buildString {
-		val encryptedDecInitTime = crypto.encryptSeed(iv, decInitTime.toByteArray(Charsets.US_ASCII))
-			.toHexString(',')
+		val encryptedDecInitTime = if(decInitTime != null) {
+			crypto.encryptSeed(iv, decInitTime.toByteArray(Charsets.US_ASCII))
+				.toHexStringNotFixed(',')
+		} else {
+			null
+		}
+		
+		val initTimeBytes = if(useAsyncTranskey) {
+			initTime.map { if(it.isLetter()) it.code.toByte() else it.digitToInt().toByte() }.toByteArray()
+		} else {
+			null
+		}
 		
 		println(geos)
 		for(geo in geos) {
@@ -59,25 +52,49 @@ class KeyPad(
 			val xBytes = x.map { it.digitToInt().toByte() }.toByteArray()
 			val yBytes = y.map { it.digitToInt().toByte() }.toByteArray()
 			
-			var data = byteArrayOf(
-				*xBytes,
-				' '.asciiByte(),
-				*yBytes,
-				' '.asciiByte(),
-				'e'.asciiByte(),
-				random.nextInt(256).toByte()
-			)
-			println(data.toString(Charsets.UTF_8))
+			val data = if(/*useAsyncTranskey*/ initTimeBytes != null) {
+				val arr = byteArrayOf(
+					*xBytes,
+					' '.asciiByte(),
+					*yBytes,
+					' '.asciiByte(),
+					*initTimeBytes,
+					' '.asciiByte(),
+					'%'.asciiByte(),
+					'b'.asciiByte()
+				)
+				val newArr = arr.copyOf(newSize = 48)
+				if(stateless) {
+					val data = decodeBase64(readLine()!!)
+					data.copyInto(newArr, destinationOffset = arr.size)
+				} else
+					for(i in arr.size until newArr.size) {
+						println("randomBytes ${i - arr.size}")
+						newArr[i] = random.nextInt(0, 101).toByte()
+					}
+				newArr
+			} else {
+				byteArrayOf(
+					*xBytes,
+					' '.asciiByte(),
+					*yBytes,
+					' '.asciiByte(),
+					'e'.asciiByte(),
+					random.nextInt(100).toByte()
+				)
+			}
+			println(data.toString(Charsets.US_ASCII))
+			println(data.toHexStringNotFixed(' '))
 			
 			val encrypted = crypto.encryptSeed(iv, data)
-			append(encrypted.toHexString(','))
+			append(encrypted.toHexStringNotFixed(','))
 			
-			if(!useSession) {
+			if(encryptedDecInitTime != null) {
 				append('$')
 				append(encryptedDecInitTime)
 			}
 		}
-	}
+	}.also(::println)
 	
 	fun encryptPassword(password: String): String {
 		val geos = getGeo(password)

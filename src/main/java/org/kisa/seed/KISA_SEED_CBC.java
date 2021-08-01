@@ -1,5 +1,7 @@
 package org.kisa.seed;
 
+import com.lhwdev.selfTestMacro.transkey.UtilsKt;
+
 import java.util.Arrays;
 
 /**
@@ -13,7 +15,7 @@ import java.util.Arrays;
 public class KISA_SEED_CBC {
 	
 	// DEFAULT : JAVA = BIG_ENDIAN
-	private static final int ENDIAN = KISA_SEED_CBC.Common.BIG_ENDIAN;
+	private static final int ENDIAN = Common.LITTLE_ENDIAN;
 	
 	// S-BOX
 	private static final int SS0[] =
@@ -554,6 +556,8 @@ public class KISA_SEED_CBC {
 		
 		cdata = int32tochar_for_SEED_CBC(outbuf, nRetOutLeng[0] + nPaddingLeng[0]);
 		KISA_SEED_CBC.Common.arraycopy(pbszCipherText, cdata, nRetOutLeng[0] + nPaddingLeng[0]);
+		
+		System.out.println("seed_encrypt: data=" + UtilsKt.toHexString(message) + ", iv=" + UtilsKt.toHexString(pbszIV) + ", key=" + UtilsKt.toHexString(pbszUserKey));
 		
 		return pbszCipherText;
 	}
