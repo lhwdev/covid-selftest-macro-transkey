@@ -3,8 +3,6 @@
 package com.lhwdev.selfTestMacro.transkey
 
 import com.lhwdev.selfTestMacro.decodeBase64
-import com.lhwdev.selfTestMacro.seed.seedEncryptCbc
-import com.lhwdev.selfTestMacro.seed.seedRoundKey
 import org.kisa.seed.KISA_SEED_CBC
 import java.io.ByteArrayInputStream
 import java.security.PublicKey
@@ -36,8 +34,8 @@ class Crypto(random: Random, certification: String) {
 	private val genSessionKey = genSessionKeyBytes.toHexString()
 	private val hexByteSessionKey = genSessionKey.toByteArray()
 	val encryptedKey = encryptRsa(hexByteSessionKey)
-	private val seedSessionKey = genSessionKey.map { it.digitToInt(radix = 16).toByte() }.toByteArray()
-	private val seedRoundKey = seedRoundKey(seedSessionKey)
+	private val seedSessionKey =
+		genSessionKey.map { it.digitToInt(radix = 16).toByte() }.toByteArray()
 	
 	
 	fun encryptRsa(data: ByteArray): String {
