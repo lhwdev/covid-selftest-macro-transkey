@@ -12,8 +12,6 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.COVID_HCS_KOTLIN_TRANSKEY_TOKEN }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-    - run: |
         git clone --bare 'https://${{ github.repository_owner}}:${{ github.token }}@github.com/${{ github.repository }}' repo
         cd repo
-    - run: |
         git push --mirror "${{ secrets.COVID_HCS_KOTLIN_URL }}"
