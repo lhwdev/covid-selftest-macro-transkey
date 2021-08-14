@@ -13,6 +13,12 @@ import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 
 
+private val iv = byteArrayOf(
+	0x4d, 0x6f, 0x62, 0x69, 0x6c, 0x65, 0x54, 0x72,
+	0x61, 0x6e, 0x73, 0x4b, 0x65, 0x79, 0x31, 0x30
+)
+
+
 private fun decodeX509DerPublicKey(x509PublicKeyEncoding: ByteArray): PublicKey =
 	CertificateFactory.getInstance("X.509")
 		.generateCertificate(ByteArrayInputStream(x509PublicKeyEncoding))
@@ -37,38 +43,23 @@ class Crypto(random: Random, certification: String) {
 	private val seedSessionKey =
 		genSessionKey.map { it.digitToInt(radix = 16).toByte() }.toByteArray()
 	
+	private val seedRoundKey = KISA_SEED_CBC.SeedRoundKey(KISA_SEED_CBC.KISA_ENC_DEC.KISA_ENCRYPT, seedSessionKey, iv)
+	
 	
 	fun encryptRsa(data: ByteArray): String {
-		if(stateless) {
-			println("encryptRsa")
-			Throwable().printStackTrace()
-			val hex = readLine()!!
-			return hex
-		}
 		return cipher.doFinal(data).toHexString()
 	}
 	
-	fun encryptSeed(iv: ByteArray, data: ByteArray): ByteArray {
-		// return seedEncryptCbc(data, seedRoundKey, iv)
-		// println("size" + data.size)
-		// if(data.size > 16) error("wow")
-		return KISA_SEED_CBC.SEED_CBC_Encrypt(seedSessionKey, iv, data, 0, data.size)
+	fun encryptSeed(data: ByteArray): ByteArray {
+		return KISA_SEED_CBC.SEED_CBC_Encrypt(seedRoundKey, data, 0, data.size)
 	}
 	
 	
 	fun hmacDigest(message: ByteArray): String {
-		println("message: ${message.toHexString()}")
-		println("key: ${hexByteSessionKey.toString(Charsets.UTF_8)}")
 		val hmacSha256 = "HmacSHA256"
 		val signingKey = SecretKeySpec(hexByteSessionKey, hmacSha256)
 		val mac = Mac.getInstance(hmacSha256)
 		mac.init(signingKey)
-		return mac.doFinal(message).toHexString().also { println(it) }
-		// return readLine()!!
-		// hmac.new( // equivalent code:
-		//             msg=msg,
-		//             key=self.genSessionKey.encode(),
-		//             digestmod=hashlib.sha256
-		//         ).hexdigest()
+		return mac.doFinal(message).toHexString()
 	}
 }

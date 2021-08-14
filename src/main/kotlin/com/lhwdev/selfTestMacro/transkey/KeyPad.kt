@@ -1,13 +1,6 @@
 package com.lhwdev.selfTestMacro.transkey
 
-import com.lhwdev.selfTestMacro.decodeBase64
 import kotlin.random.Random
-
-
-private val iv = byteArrayOf(
-	0x4d, 0x6f, 0x62, 0x69, 0x6c, 0x65, 0x54, 0x72,
-	0x61, 0x6e, 0x73, 0x4b, 0x65, 0x79, 0x31, 0x30
-)
 
 
 class KeyPad(
@@ -31,7 +24,7 @@ class KeyPad(
 	
 	fun encryptGeos(geos: List<Pair<String, String>>): String = buildString {
 		val encryptedDecInitTime = if(decInitTime != null) {
-			crypto.encryptSeed(iv, decInitTime.toByteArray(Charsets.US_ASCII))
+			crypto.encryptSeed(decInitTime.toByteArray(Charsets.US_ASCII))
 				.toHexStringNotFixed(',')
 		} else {
 			null
@@ -43,7 +36,6 @@ class KeyPad(
 			null
 		}
 		
-		println(geos)
 		for(geo in geos) {
 			append('$')
 			
@@ -64,14 +56,10 @@ class KeyPad(
 					'b'.asciiByte()
 				)
 				val newArr = arr.copyOf(newSize = 48)
-				if(stateless) {
-					val data = decodeBase64(readLine()!!)
-					data.copyInto(newArr, destinationOffset = arr.size)
-				} else
-					for(i in arr.size until newArr.size) {
-						println("randomBytes ${i - arr.size}")
-						newArr[i] = random.nextInt(0, 101).toByte()
-					}
+				
+				for(i in arr.size until newArr.size) {
+					newArr[i] = random.nextInt(0, 101).toByte()
+				}
 				newArr
 			} else {
 				byteArrayOf(
@@ -83,10 +71,7 @@ class KeyPad(
 					random.nextInt(100).toByte()
 				)
 			}
-			println(data.toString(Charsets.US_ASCII))
-			println(data.toHexStringNotFixed(' '))
-			
-			val encrypted = crypto.encryptSeed(iv, data)
+			val encrypted = crypto.encryptSeed(data)
 			append(encrypted.toHexStringNotFixed(','))
 			
 			if(encryptedDecInitTime != null) {
@@ -94,7 +79,7 @@ class KeyPad(
 				append(encryptedDecInitTime)
 			}
 		}
-	}.also(::println)
+	}
 	
 	fun encryptPassword(password: String): String {
 		val geos = getGeo(password)

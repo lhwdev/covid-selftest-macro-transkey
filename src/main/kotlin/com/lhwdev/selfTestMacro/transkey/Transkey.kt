@@ -6,7 +6,6 @@ import kotlinx.coroutines.withContext
 import java.net.URL
 import kotlin.random.Random
 
-val stateless = false
 
 @Suppress("MayBeConstant")
 val useAsyncTranskey = true
@@ -29,15 +28,11 @@ suspend fun Transkey(
 		session.fetch(servletUrl["op" to "getToken"]).getText()
 	)!!.groupValues[1]
 	
-	println("token = $token;")
-	
 	val getInitTimeResult = session.fetch(servletUrl["op" to "getInitTime"]).getText()
 	
 	val decInitTime = sDecInitTimeRegex.find(getInitTimeResult)?.groupValues?.get(1)
 	val initTime = sInitTimeRegex.find(getInitTimeResult)!!.groupValues[1]
 	val useSession = sUseSessionRegex.find(getInitTimeResult)!!.groupValues[1] == "true"
-	
-	println("decInitTime = $decInitTime; initTime = $initTime; useSession = $useSession;")
 	
 	val certification = session.fetch(
 		servletUrl,
@@ -68,8 +63,6 @@ suspend fun Transkey(
 		val groups = sKeyInfoPointRegex.find(p)!!.groupValues
 		groups[1] to groups[2]
 	}
-	
-	println("numberKeys = $numberKeys")
 	
 	Transkey(
 		session = session,
