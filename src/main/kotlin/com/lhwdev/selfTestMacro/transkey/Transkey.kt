@@ -1,6 +1,13 @@
 package com.lhwdev.selfTestMacro.transkey
 
-import com.lhwdev.selfTestMacro.*
+import com.lhwdev.fetch.Bodies
+import com.lhwdev.fetch.FormScope
+import com.lhwdev.fetch.form
+import com.lhwdev.fetch.getText
+import com.lhwdev.fetch.http.HttpMethod
+import com.lhwdev.fetch.http.Session
+import com.lhwdev.fetch.http.fetch
+import com.lhwdev.selfTestMacro.get
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL
@@ -37,7 +44,7 @@ suspend fun Transkey(
 	val certification = session.fetch(
 		servletUrl,
 		method = HttpMethod.post,
-		body = HttpBodies.form {
+		body = Bodies.form {
 			"op" set "getPublicKey"
 			"TK_requestToken" set token
 		}
@@ -48,7 +55,7 @@ suspend fun Transkey(
 	val keyInfo = session.fetch(
 		servletUrl,
 		method = HttpMethod.post,
-		body = HttpBodies.form {
+		body = Bodies.form {
 			"op" set "getKeyInfo"
 			"key" set crypto.encryptedKey
 			"transkeyUuid" set crypto.uuid
@@ -124,7 +131,7 @@ class Transkey(
 			session.fetch(
 				servletUrl,
 				method = HttpMethod.post,
-				body = HttpBodies.form {
+				body = Bodies.form {
 					commonData()
 					"op" set "getKeyIndex"
 				}
@@ -137,7 +144,7 @@ class Transkey(
 		val skipData = session.fetch(
 			servletUrl,
 			method = HttpMethod.post,
-			body = HttpBodies.form {
+			body = Bodies.form {
 				commonData()
 				"op" set "getDummy"
 				"keyIndex" set keyIndex
