@@ -1,13 +1,9 @@
 package com.lhwdev.selfTestMacro.transkey
 
-import com.lhwdev.fetch.Bodies
-import com.lhwdev.fetch.FormScope
-import com.lhwdev.fetch.form
-import com.lhwdev.fetch.getText
+import com.lhwdev.fetch.*
 import com.lhwdev.fetch.http.HttpMethod
 import com.lhwdev.fetch.http.Session
 import com.lhwdev.fetch.http.fetch
-import com.lhwdev.selfTestMacro.get
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL

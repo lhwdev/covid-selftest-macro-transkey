@@ -2,7 +2,7 @@
 
 package com.lhwdev.selfTestMacro.transkey
 
-import com.lhwdev.selfTestMacro.decodeBase64
+import com.lhwdev.io.decodeBase64
 import org.kisa.seed.KISA_SEED_CBC
 import java.io.ByteArrayInputStream
 import java.security.PublicKey
