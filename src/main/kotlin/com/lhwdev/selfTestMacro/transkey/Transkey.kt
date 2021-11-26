@@ -37,7 +37,7 @@ suspend fun Transkey(
 	val initTime = sInitTimeRegex.find(getInitTimeResult)!!.groupValues[1]
 	val useSession = sUseSessionRegex.find(getInitTimeResult)!!.groupValues[1] == "true"
 	
-	val certification = session.fetch(
+	val certification = fetch(
 		servletUrl,
 		method = HttpMethod.post,
 		body = Bodies.form {
@@ -48,7 +48,7 @@ suspend fun Transkey(
 	
 	val crypto = Crypto(random, certification)
 	
-	val keyInfo = session.fetch(
+	val keyInfo = fetch(
 		servletUrl,
 		method = HttpMethod.post,
 		body = Bodies.form {
@@ -124,7 +124,7 @@ class Transkey(
 		}
 		
 		val keyIndex = if(useAsyncTranskey) {
-			session.fetch(
+			fetch(
 				servletUrl,
 				method = HttpMethod.post,
 				body = Bodies.form {
@@ -137,7 +137,7 @@ class Transkey(
 			crypto.encryptRsa(keyIndex.toByteArray(Charsets.US_ASCII))
 		}
 		
-		val skipData = session.fetch(
+		val skipData = fetch(
 			servletUrl,
 			method = HttpMethod.post,
 			body = Bodies.form {
