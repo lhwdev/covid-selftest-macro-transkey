@@ -4,10 +4,10 @@ plugins {
 }
 
 dependencies {
-	implementation(project(":api-base"))
+	implementation(projects.apiBase)
 	
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
-	implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.1")
-	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
+	implementation(libs.coroutinesCore)
+	implementation(libs.serializationCore)
+	implementation(libs.serializationJson)
 	testImplementation(kotlin("test"))
 }
