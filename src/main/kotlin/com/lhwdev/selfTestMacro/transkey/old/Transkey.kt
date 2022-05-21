@@ -1,9 +1,8 @@
-package com.lhwdev.selfTestMacro.transkey
+package com.lhwdev.selfTestMacro.transkey.old
 
 import com.lhwdev.fetch.*
 import com.lhwdev.fetch.http.HttpMethod
 import com.lhwdev.fetch.http.Session
-import com.lhwdev.fetch.http.fetch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL

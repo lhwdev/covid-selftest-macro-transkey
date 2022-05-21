@@ -1,6 +1,9 @@
-package com.lhwdev.selfTestMacro.transkey
+package com.lhwdev.selfTestMacro.transkey.old
 
+import com.lhwdev.selfTestMacro.transkey.appendHexStringNotFixed
+import com.lhwdev.selfTestMacro.transkey.asciiByte
 import kotlin.random.Random
+
 
 
 class KeyPad(
@@ -23,9 +26,8 @@ class KeyPad(
 		message.map { keys[skipData.indexOf(it)] }
 	
 	fun encryptGeos(geos: List<Pair<String, String>>): String = buildString {
-		val encryptedDecInitTime = if(decInitTime != null) {
-			crypto.encryptSeed(decInitTime.toByteArray(Charsets.US_ASCII))
-				.toHexStringNotFixed(',')
+		val encryptedDecInitTime = if(decInitTime != null) buildString {
+			appendHexStringNotFixed(crypto.encryptSeed(decInitTime.toByteArray(Charsets.US_ASCII)), ',')
 		} else {
 			null
 		}
@@ -47,13 +49,13 @@ class KeyPad(
 			val data = if(/*useAsyncTranskey*/ initTimeBytes != null) {
 				val arr = byteArrayOf(
 					*xBytes,
-					' '.asciiByte(),
+					' '.asciiByte,
 					*yBytes,
-					' '.asciiByte(),
+					' '.asciiByte,
 					*initTimeBytes,
-					' '.asciiByte(),
-					'%'.asciiByte(),
-					'b'.asciiByte()
+					' '.asciiByte,
+					'%'.asciiByte,
+					'b'.asciiByte
 				)
 				val newArr = arr.copyOf(newSize = 48)
 				
@@ -64,15 +66,15 @@ class KeyPad(
 			} else {
 				byteArrayOf(
 					*xBytes,
-					' '.asciiByte(),
+					' '.asciiByte,
 					*yBytes,
-					' '.asciiByte(),
-					'e'.asciiByte(),
+					' '.asciiByte,
+					'e'.asciiByte,
 					random.nextInt(100).toByte()
 				)
 			}
 			val encrypted = crypto.encryptSeed(data)
-			append(encrypted.toHexStringNotFixed(','))
+			appendHexStringNotFixed(encrypted, ',')
 			
 			if(encryptedDecInitTime != null) {
 				append('$')
