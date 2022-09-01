@@ -1,5 +1,5 @@
 # covid-selftest-macro-transkey
-~~문제가 있을까봐 비공으로 돌림~~ 공개했지만 언제든지 비공으로 돌릴 수 있음.
+~~문제가 있을까봐 비공으로 돌림~~ ~~공개했지만 언제든지 비공으로 돌릴 수 있음.~~ 다시 비공으로 돌림
 
 이 리포 혼자 클론하지 말고, [covid-selftest-macro 리포](https://github.com/lhwdev/covid-selftest-macro)를 클론할 때 --recurse-submodules를 같이 붙여주세요.
 
